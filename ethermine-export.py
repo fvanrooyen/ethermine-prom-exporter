@@ -2,11 +2,9 @@
 
 from prometheus_client import start_http_server, Gauge, Counter
 import argparse
-import httplib
-import time
-import collections
 import json
 import requests
+import time
 
 version = 0.50
 
@@ -22,7 +20,7 @@ mineraddress = args.miner
 listenport = args.port
 sleep_time = args.frequency
 
-
+#Prometheus Requests 
 REQUEST_ADDRESS = Gauge('Ethermine_Address','Etermine Address',['MinerID'])
 REQUEST_REPORTED_HASH = Gauge('Ethermine_Reported_Hash_Rate', 'Ethermine Reported Hash Rate')
 REQUEST_UNPAID_BALANCE = Gauge('Ethermine_Unpaid_Balance', 'Ethermine Unpaid Balance')
@@ -37,17 +35,12 @@ if __name__ == "__main__":
         r = requests.get('https://ethermine.org/api/miner_new/' + mineraddress)
         data = json.loads(r.text)
         REQUEST_ADDRESS.labels(data["address"])
-        print(data["address"])
         hashrate = data["reportedHashRate"]
         hashrate = hashrate.split()
         REQUEST_REPORTED_HASH.set(hashrate[0])
-        print(hashrate[0])
         REQUEST_UNPAID_BALANCE.set(float(data['unpaid']) / 1000000000000000000)
-        print(float(data['unpaid']) / 1000000000000000000) 
         REQUEST_PROGRESS_PAYOUT.set((float(data['unpaid']) / 10000000000000000)/.5)
-        print((float(data['unpaid']) / 10000000000000000)/.5)
         REQUEST_ACTIVE_WORKERS.set(data["minerStats"]["activeWorkers"])
-        print(data["minerStats"]["activeWorkers"])
-
+        
         #Sleep before run again
         time.sleep(sleep_time)
