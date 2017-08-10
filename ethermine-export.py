@@ -12,7 +12,7 @@ version = 0.50
 parser = argparse.ArgumentParser(description="EtherminePrometheus exporter v" + str(version))
 parser.add_argument("-m", "--miner", metavar="<mid>", required=True, help="Miner Address")
 parser.add_argument("-p", "--port", metavar="<port>", required=False, help="Port for listenin", default=8701, type=int)
-parser.add_argument("-f", "--frequency", metavar="<seconds>", required=False, help="Interval in seconds between checking measures", default=1, type=int)
+parser.add_argument("-f", "--frequency", metavar="<seconds>", required=False, help="Interval in seconds between checking measures", default=60, type=int)
 args = parser.parse_args()
 
 #Get the Arguments
@@ -41,6 +41,6 @@ if __name__ == "__main__":
         REQUEST_UNPAID_BALANCE.set(float(data['unpaid']) / 1000000000000000000)
         REQUEST_PROGRESS_PAYOUT.set((float(data['unpaid']) / 10000000000000000)/.5)
         REQUEST_ACTIVE_WORKERS.set(data["minerStats"]["activeWorkers"])
-        
+
         #Sleep before run again
         time.sleep(sleep_time)
