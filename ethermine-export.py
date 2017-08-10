@@ -10,6 +10,11 @@ import requests
 
 version = 0.50
 
+# Parse commandline arguments
+parser = argparse.ArgumentParser(description="EtherminePrometheus exporter v" + str(version))
+parser.add_argument("-m", "--miner", metavar="<mid>", required=True, help="Miner Address")
+args = parser.parse_args()
+
 REQUEST_ADDRESS = Gauge('Ethermine_Address','Etermine Address',['MinerID'])
 REQUEST_REPORTED_HASH = Gauge('Ethermine_Reported_Hash_Rate', 'Ethermine Reported Hash Rate')
 REQUEST_UNPAID_BALANCE = Gauge('Ethermine_Unpaid_Balance', 'Ethermine Unpaid Balance')
@@ -17,7 +22,7 @@ REQUEST_PROGRESS_PAYOUT = Gauge('Ethermine_Progress_Payout', 'Ethermine Payout P
 REQUEST_ACTIVE_WORKERS= Gauge('Ethermine_Active_Workers', 'Ethermine Active Workers')
 
 if __name__ == "__main__":
-    r = requests.get('https://ethermine.org/api/miner_new/5526624c135c0390b5b5EE0aC5A2063Fe19F9FD5')
+    r = requests.get('https://ethermine.org/api/miner_new/' + args.miner)
     data = json.loads(r.text)
     REQUEST_ADDRESS.labels(data["address"])
     print(data["address"])
