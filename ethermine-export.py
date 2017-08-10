@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from prometheus_client import start_http_server, Gauge, Counter
-#from prometheus_client import start_http_server, Metric, REGISTRY
 import argparse
 import httplib
 import time
@@ -11,7 +10,7 @@ import requests
 
 version = 0.50
 
-REQUEST_ADDRESS = Gauge('Ethermine_Address','Etermine Address')
+REQUEST_ADDRESS = Gauge('Ethermine_Address','Etermine Address',['MinerID'])
 REQUEST_REPORTED_HASH = Gauge('Ethermine_Reported_Hash_Rate', 'Ethermine Reported Hash Rate')
 REQUEST_UNPAID_BALANCE = Gauge('Ethermine_Unpaid_Balance', 'Ethermine Unpaid Balance')
 REQUEST_PROGRESS_PAYOUT = Gauge('Ethermine_Progress_Payout', 'Ethermine Payout Progress')
@@ -20,7 +19,7 @@ REQUEST_ACTIVE_WORKERS= Gauge('Ethermine_Active_Workers', 'Ethermine Active Work
 if __name__ == "__main__":
     r = requests.get('https://ethermine.org/api/miner_new/5526624c135c0390b5b5EE0aC5A2063Fe19F9FD5')
     data = json.loads(r.text)
-    #REQUEST_ADDRESS.set(data["address"])
+    REQUEST_ADDRESS.labels(data["address"])
     print(data["address"])
     hashrate = data["reportedHashRate"]
     hashrate = hashrate.split()
