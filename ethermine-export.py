@@ -5,6 +5,8 @@ import argparse
 import json
 import requests
 import time
+import logging
+import logging.handlers
 
 version = 0.50
 
@@ -20,6 +22,12 @@ mineraddress = args.miner
 listenport = args.port
 sleep_time = args.frequency
 
+#Setup Logger
+my_logger = logging.getLogger('MyLogger')
+my_logger.setLevel(logging.DEBUG)
+handler = logging.handlers.SysLogHandler(address = '/var/run/syslog')
+my_logger.addHandler(handler)
+
 #Prometheus Requests 
 REQUEST_ADDRESS = Gauge('Ethermine_Address','Etermine Address',['MinerID'])
 REQUEST_REPORTED_HASH = Gauge('Ethermine_Reported_Hash_Rate', 'Ethermine Reported Hash Rate')
@@ -32,15 +40,29 @@ if __name__ == "__main__":
     start_http_server(listenport)
 
     while True:
-        r = requests.get('https://ethermine.org/api/miner_new/' + mineraddress)
-        data = json.loads(r.text)
-        REQUEST_ADDRESS.labels(data["address"])
-        hashrate = data["reportedHashRate"]
-        hashrate = hashrate.split()
-        REQUEST_REPORTED_HASH.set(hashrate[0])
-        REQUEST_UNPAID_BALANCE.set(float(data['unpaid']) / 1000000000000000000)
-        REQUEST_PROGRESS_PAYOUT.set((float(data['unpaid']) / 10000000000000000)/.5)
-        REQUEST_ACTIVE_WORKERS.set(data["minerStats"]["activeWorkers"])
+        
+        #Check to see if Ethermine is up
+        try:
+            r = requests.get('https://ethermine.org/api/miner_new/' + mineraddress)
+        except requests.exceptions.RequestException as e:
+                my_logger.critical(e)
+
+        #Check to see if there are issues with the API 
+        if r.text != 'Too many requests, please try again later.':
+            data = json.loads(r.text)
+            REQUEST_ADDRESS.labels(data["address"])
+            hashrate = data["reportedHashRate"]
+            hashrate = hashrate.split()
+            REQUEST_REPORTED_HASH.set(hashrate[0])
+            REQUEST_UNPAID_BALANCE.set(float(data['unpaid']) / 1000000000000000000)
+            REQUEST_PROGRESS_PAYOUT.set((float(data['unpaid']) / 10000000000000000)/.5)
+            REQUEST_ACTIVE_WORKERS.set(data["minerStats"]["activeWorkers"])
+
+        #If the Frequency is too aggressive then add 5 second to the time and wait for counters to reset
+        else:
+            logging.warning('Frequency too aggresive need to backoff')
+            sleep_time = sleep_time + 5
+            time.sleep(300)
 
         #Sleep before run again
         time.sleep(sleep_time)
