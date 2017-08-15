@@ -2,6 +2,7 @@
 
 from prometheus_client import start_http_server, Gauge, Counter
 import argparse
+import httplib
 import json
 import requests
 import time
