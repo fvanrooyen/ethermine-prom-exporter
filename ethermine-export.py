@@ -5,8 +5,7 @@ import argparse
 import json
 import requests
 import time
-import logging
-import logging.handlers
+import sys
 
 version = 0.50
 
@@ -21,12 +20,6 @@ args = parser.parse_args()
 mineraddress = args.miner
 listenport = args.port
 sleep_time = args.frequency
-
-#Setup Logger
-my_logger = logging.getLogger('MyLogger')
-my_logger.setLevel(logging.DEBUG)
-handler = logging.handlers.SysLogHandler(address = '/var/run/syslog')
-my_logger.addHandler(handler)
 
 #Prometheus Requests 
 REQUEST_ADDRESS = Gauge('Ethermine_Address','Etermine Address',['MinerID'])
@@ -45,7 +38,7 @@ if __name__ == "__main__":
         try:
             r = requests.get('https://ethermine.org/api/miner_new/' + mineraddress)
         except requests.exceptions.RequestException as e:
-                my_logger.critical(e)
+                 sys.stderr.write('Error getting to the page\n')
 
         #Check to see if there are issues with the API 
         if r.text != 'Too many requests, please try again later.':
@@ -57,10 +50,11 @@ if __name__ == "__main__":
             REQUEST_UNPAID_BALANCE.set(float(data['unpaid']) / 1000000000000000000)
             REQUEST_PROGRESS_PAYOUT.set((float(data['unpaid']) / 10000000000000000)/.5)
             REQUEST_ACTIVE_WORKERS.set(data["minerStats"]["activeWorkers"])
+            sys.stdout.write(hashrate[0] + '\n')
 
         #If the Frequency is too aggressive then add 5 second to the time and wait for counters to reset
         else:
-            logging.warning('Frequency too aggresive need to backoff')
+            sys.stderr.write('ERROR - too many requests made to the API\n')
             sleep_time = sleep_time + 5
             time.sleep(300)
 
